@@ -45,7 +45,7 @@ function Crops() {
     const addCrop = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch("http://localhost:5000/api/crops/addcrop", {
+            const response = await fetch("http://localhost:5000/api/crops/detect-diseases", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(newCrop),

@@ -7,7 +7,7 @@ function InNav() {
                 <li><a href="/crops" className="hover:text-green-400">Home</a></li>
                 <li><a href="/plant" className="hover:text-green-400">Plantation details</a></li>
                 <li><a href="/wee" className="hover:text-green-400">Weather</a></li>
-                <li><a href="#" className="hover:text-green-400">Disease identification</a></li>
+                <li><a href="/detect" className="hover:text-green-400">Disease identification</a></li>
             </ul>
         </nav>
     );
