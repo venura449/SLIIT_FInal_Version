@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaUser, FaCog } from "react-icons/fa";
 import { RiLogoutCircleRLine } from "react-icons/ri";
 import logo from "../src_img/logo.png";
-import SplashCursor from "../Animations/Splash Cursor.jsx";
 
 function Header() {
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -37,7 +36,6 @@ function Header() {
     return (
         <header className="bg-gray-900 bg-opacity-50 backdrop-blur-lg shadow-lg rounded-3xl flex items-center justify-between px-8 py-4">
             {/* Logo Section */}
-
             <div className="flex items-center">
                 <img src={logo} alt="logo" className="w-32 h-16 object-cover" />
             </div>
@@ -54,7 +52,7 @@ function Header() {
                     Crops
                 </Link>
 
-                <Link to="/vecdash" className={`px-4 py-2 ${isActive("/vecdash")}`}>
+                <Link to="/vehicles" className={`px-4 py-2 ${isActive("/vehicles")}`}>
                     Vehicles
                 </Link>
                 <Link to="/assets" className={`px-4 py-2 ${isActive("/assets")}`}>
