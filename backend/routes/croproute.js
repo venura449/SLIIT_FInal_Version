@@ -6,15 +6,32 @@ import Crop from '../model/crop.model.js';
 const router = express.Router();
 
 // 🔹 Fetch all crops
-router.get('/getcrops', async (req, res) => {
+router.get('/getcrops/:usermail', async (req, res) => {
     try {
-        const crops = await Crop.find({});
+        const crops = await Crop.find({ user_email: req.params.usermail });
+        if (!crops || crops.length === 0) {
+            return res.status(404).json({ success: false, message: "No crops found for this user" });
+        }
         res.status(200).json({ success: true, data: crops });
     } catch (e) {
         console.error(e);
-        res.status(500).json({ error: e });
+        res.status(500).json({ error: e.message });
     }
 });
+
+router.get('/getcrops', async (req, res) => {
+    try {
+        const crops = await Crop.find({});
+        if (!crops || crops.length === 0) {
+            return res.status(404).json({ success: false, message: "No crops found for this user" });
+        }
+        res.status(200).json({ success: true, data: crops });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 
 // 🔹 Fetch a single crop by ID
 router.get('/getcrop/:id', async (req, res) => {
@@ -32,14 +49,14 @@ router.get('/getcrop/:id', async (req, res) => {
 
 // 🔹 Add a new crop
 router.post('/addcrop', async (req, res) => {
-    const { plantId, name, bedLocation, plantedDate, pesticideState } = req.body;
+    const { plantId, name, bedLocation, plantedDate, pesticideState,user_email } = req.body;
 
-    if (!plantId || !name || !bedLocation || !plantedDate || !pesticideState) {
+    if (!plantId || !name || !bedLocation || !plantedDate || !pesticideState || !user_email) {
         return res.status(400).json({ success: false, error: "All fields are required" });
     }
 
     try {
-        const newCrop = new Crop({ plantId, name, bedLocation, plantedDate, pesticideState });
+        const newCrop = new Crop({ plantId, name, bedLocation, plantedDate, pesticideState,user_email });
         await newCrop.save();
         res.status(201).json({ success: true, message: "Crop added successfully", data: newCrop });
     } catch (e) {
@@ -48,16 +65,7 @@ router.post('/addcrop', async (req, res) => {
     }
 });
 
-router.post("/addcrop", async (req, res) => {
-    try {
-        const { plantId, name, bedLocation, plantedDate, pesticideState } = req.body;
-        const newCrop = new Crop({ plantId, name, bedLocation, plantedDate, pesticideState });
-        await newCrop.save();
-        res.status(201).json({ success: true, message: "Crop added successfully!" });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Error adding crop", error });
-    }
-});
+
 
 // 🔹 Update crop details
 router.put('/update/:id', async (req, res) => {

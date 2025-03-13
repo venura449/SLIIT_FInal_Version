@@ -28,7 +28,9 @@ function Crops() {
 
     const fetchCrops = async () => {
         try {
-            const response = await fetch("http://localhost:5000/api/crops/getcrops");
+            const user = JSON.parse(sessionStorage.getItem("user"));
+            const email = user?.email || "";
+            const response = await fetch(`http://localhost:5000/api/crops/getcrops/${email}`);
             const data = await response.json();
             if (data.success) {
                 setCrops(data.data);
@@ -42,29 +44,6 @@ function Crops() {
 
     const handleChange = (e) => {
         setNewCrop({ ...newCrop, [e.target.name]: e.target.value });
-    };
-
-    const addCrop = async (e) => {
-        e.preventDefault();
-        try {
-            const response = await fetch("http://localhost:5000/api/crops/addcrop", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(newCrop),
-            });
-
-            const data = await response.json();
-            if (data.success) {
-                toast.success("Crop added successfully!");
-                setNewCrop({ plantId: "", name: "", bedLocation: "", plantedDate: "", estimatedHarvestDate: "", pesticideState: "Healthy" });
-                fetchCrops();
-                setModalOpen(false);
-            } else {
-                toast.error("Error adding crop: " + data.error);
-            }
-        } catch (error) {
-            toast.error("An error occurred while adding the crop.");
-        }
     };
 
     const updateCrop = (crop) => {
@@ -118,19 +97,29 @@ function Crops() {
         }
     };
 
+    useEffect(() => {
+        console.log("Updated selectedCropDetails:", selectedCropDetails);
+    }, [selectedCropDetails]); // Runs whenever `selectedCropDetails` updates
+
     const fetchCropDetails = async (name) => {
         try {
-            const response = await fetch(`https://trefle.io/api/v1/plants/search?token=4s5YsGGfrKNwfvzi3cY_qeXYLbQxN3XCy245pnOUL9A&q=${name}`);
+            const response = await fetch(`http://localhost:5000/api/pesticide-inventory/crop-details?q=${name}`, {
+                method: 'GET',
+            });
             const data = await response.json();
-            if (data.success) {
-                setSelectedCropDetails(data.data);
+
+            if (data.data[0]!= null) {
+                console.log("Fetched Data:", data.data[0]);
+                setSelectedCropDetails(data.data[0]);
             } else {
-                console.error("Error fetching crop details:", data.error);
+                toast.error("Can't Find the plant...❌");
+                console.error("Can't Find the plant...❌");
             }
         } catch (error) {
             console.error("An error occurred while fetching crop details:", error);
         }
     };
+
 
     return (
         <>
@@ -142,10 +131,6 @@ function Crops() {
 
                 <div className="flex justify-between items-center">
                     <Innav />
-                    <button onClick={() => setModalOpen(true)}
-                            className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-white">
-                        Add New Crop
-                    </button>
                 </div>
 
                 <div className="overflow-x-auto mt-4">
@@ -174,15 +159,18 @@ function Crops() {
                                 </td>
                                 <td className="px-4 py-2 border border-gray-700">{crop.pesticideState}</td>
                                 <td className="px-4 py-2 border border-gray-700 space-x-2">
-                                    <button onClick={() => updateCrop(crop)} className="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white">
+                                    <button onClick={() => updateCrop(crop)}
+                                            className="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white">
                                         Update
                                     </button>
-                                    <button onClick={() => deleteCrop(crop._id)} className="bg-red-600 hover:bg-red-500 px-3 py-1 rounded text-white">
+                                    <button onClick={() => deleteCrop(crop._id)}
+                                            className="bg-red-600 hover:bg-red-500 px-3 py-1 rounded text-white">
                                         Delete
                                     </button>
                                 </td>
                                 <td className="px-4 py-2 border border-gray-700">
-                                    <button onClick={() => fetchCropDetails(crop.name)} className="bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded text-white">
+                                    <button onClick={() => fetchCropDetails(crop.name)}
+                                            className="bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded text-white">
                                         View More
                                     </button>
                                 </td>
@@ -197,139 +185,109 @@ function Crops() {
             {selectedCropDetails && (
                 <motion.div
                     initial={{ opacity: 0, scale: 0.8, backgroundColor: "rgba(0, 0, 0, 0)" }}
-                    animate={{ opacity: 1, scale: 1, backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+                    animate={{ opacity: 1, scale: 1, backgroundColor: "rgba(0, 0, 0, 0.7)" }}
                     exit={{ opacity: 0, scale: 0.8, backgroundColor: "rgba(0, 0, 0, 0)" }}
                     className="fixed inset-0 flex items-center justify-center"
                 >
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
-                        <h3 className="text-lg font-semibold text-gray-200 mb-2">Crop Details</h3>
-                        <p><strong>Plant ID:</strong> {selectedCropDetails.plantId}</p>
-                        <p><strong>Name:</strong> {selectedCropDetails.name}</p>
-                        <p><strong>Planted Date:</strong> {new Date(selectedCropDetails.plantedDate).toLocaleDateString()}</p>
-                        <p><strong>Estimated Harvest Date:</strong> {new Date(selectedCropDetails.estimatedHarvestDate).toLocaleDateString()}</p>
-                        <p><strong>Pesticide State:</strong> {selectedCropDetails.pesticideState}</p>
-                        <button onClick={() => setSelectedCropDetails(null)} className="mt-4 bg-gray-600 hover:bg-gray-500 text-white py-2 px-4 rounded">
-                            Close
+                    <div className="bg-[#1E1E1E] p-6 rounded-lg shadow-lg w-96 border border-gray-700">
+                        <h3 className="text-xl font-semibold text-gray-300 mb-4">🌿 Crop Details</h3>
+
+                        {/* Access properties directly from selectedCropDetails object */}
+                        <p className="text-gray-400"><strong className="text-gray-300">Common Name:</strong> {selectedCropDetails.common_name}</p>
+                        <p className="text-gray-400"><strong className="text-gray-300">Scientific Name:</strong> {selectedCropDetails.scientific_name}</p>
+                        <p className="text-gray-400"><strong className="text-gray-300">Year:</strong> {selectedCropDetails.year}</p>
+                        <p className="text-gray-400"><strong className="text-gray-300">Bibliography:</strong> {selectedCropDetails.bibliography}</p>
+                        <p className="text-gray-400"><strong className="text-gray-300">Author:</strong> {selectedCropDetails.author}</p>
+                        <p className="text-gray-400"><strong className="text-gray-300">Status:</strong> {selectedCropDetails.status}</p>
+                        <p className="text-gray-400"><strong className="text-gray-300">Rank:</strong> {selectedCropDetails.rank}</p>
+                        <p className="text-gray-400"><strong className="text-gray-300">Family:</strong> {selectedCropDetails.family}</p>
+                        <p className="text-gray-400"><strong className="text-gray-300">Genus:</strong> {selectedCropDetails.genus}</p>
+
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setSelectedCropDetails(null)}
+                            className="mt-4 bg-[#333] hover:bg-gray-700 text-gray-200 py-2 px-4 rounded-lg transition duration-300"
+                        >
+                            ❌ Close
                         </button>
                     </div>
                 </motion.div>
             )}
 
-            {/* Modal for adding new crop */}
-            {modalOpen && (
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.8, backgroundColor: "rgba(0, 0, 0, 0)" }}
-                    animate={{ opacity: 1, scale: 1, backgroundColor: "rgba(0, 0, 0, 0.5)" }}
-                    exit={{ opacity: 0, scale: 0.8, backgroundColor: "rgba(0, 0, 0, 0)" }}
-                    className="fixed inset-0 flex items-center justify-center"
-                >
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
-                        <h3 className="text-lg font-semibold text-gray-200 mb-2">Add New Crop</h3>
-                        <form onSubmit={addCrop}>
-                            <input
-                                type="text"
-                                name="plantId"
-                                value={newCrop.plantId}
-                                onChange={handleChange}
-                                placeholder="Plant ID"
-                                className="w-full mb-2 p-2 rounded bg-gray-700 text-white"
-                            />
-                            <input
-                                type="text"
-                                name="name"
-                                value={newCrop.name}
-                                onChange={handleChange}
-                                placeholder="Crop Name"
-                                className="w-full mb-2 p-2 rounded bg-gray-700 text-white"
-                            />
-                            <input
-                                type="date"
-                                name="plantedDate"
-                                value={newCrop.plantedDate}
-                                onChange={handleChange}
-                                className="w-full mb-2 p-2 rounded bg-gray-700 text-white"
-                            />
-                            <input
-                                type="date"
-                                name="estimatedHarvestDate"
-                                value={newCrop.estimatedHarvestDate}
-                                onChange={handleChange}
-                                className="w-full mb-2 p-2 rounded bg-gray-700 text-white"
-                            />
-                            <select
-                                name="pesticideState"
-                                value={newCrop.pesticideState}
-                                onChange={handleChange}
-                                className="w-full mb-2 p-2 rounded bg-gray-700 text-white"
-                            >
-                                <option value="Healthy">Healthy</option>
-                                <option value="Not Sprayed">Not Sprayed</option>
-                                <option value="Sprayed">Sprayed</option>
-                            </select>
-                            <button type="submit" className="bg-green-600 hover:bg-green-500 text-white py-2 px-4 rounded">
-                                Add Crop
-                            </button>
-                        </form>
-                    </div>
-                </motion.div>
-            )}
-
             {/* Modal for updating a crop */}
-            {updateModalOpen && selectedCrop && (
+            {updateModalOpen && (
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.8, backgroundColor: "rgba(0, 0, 0, 0)" }}
-                    animate={{ opacity: 1, scale: 1, backgroundColor: "rgba(0, 0, 0, 0.5)" }}
-                    exit={{ opacity: 0, scale: 0.8, backgroundColor: "rgba(0, 0, 0, 0)" }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
                     className="fixed inset-0 flex items-center justify-center"
                 >
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
-                        <h3 className="text-lg font-semibold text-gray-200 mb-2">Update Crop</h3>
+                    <div className="bg-[#1E1E1E] p-6 rounded-lg shadow-lg w-96 border border-gray-700">
+                        <h3 className="text-xl font-semibold text-gray-300 mb-4">🌿 Update Crop</h3>
                         <form onSubmit={handleUpdateCrop}>
-                            <input
-                                type="text"
-                                name="plantId"
-                                value={selectedCrop.plantId}
-                                onChange={handleUpdateChange}
-                                className="w-full mb-2 p-2 rounded bg-gray-700 text-white"
-                            />
-                            <input
-                                type="text"
-                                name="name"
-                                value={selectedCrop.name}
-                                onChange={handleUpdateChange}
-                                className="w-full mb-2 p-2 rounded bg-gray-700 text-white"
-                            />
-                            <input
-                                type="date"
-                                name="plantedDate"
-                                value={selectedCrop.plantedDate}
-                                onChange={handleUpdateChange}
-                                className="w-full mb-2 p-2 rounded bg-gray-700 text-white"
-                            />
-                            <input
-                                type="date"
-                                name="estimatedHarvestDate"
-                                value={selectedCrop.estimatedHarvestDate}
-                                onChange={handleUpdateChange}
-                                className="w-full mb-2 p-2 rounded bg-gray-700 text-white"
-                            />
-                            <select
-                                name="pesticideState"
-                                value={selectedCrop.pesticideState}
-                                onChange={handleUpdateChange}
-                                className="w-full mb-2 p-2 rounded bg-gray-700 text-white"
-                            >
-                                <option value="Healthy">Healthy</option>
-                                <option value="Not Sprayed">Not Sprayed</option>
-                                <option value="Sprayed">Sprayed</option>
-                            </select>
-                            <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white py-2 px-4 rounded">
-                                Update Crop
-                            </button>
+                            <div className="space-y-4">
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={selectedCrop.name}
+                                    onChange={handleUpdateChange}
+                                    className="w-full px-4 py-2 rounded-md bg-[#333] text-gray-300 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    placeholder="Crop Name"
+                                    required
+                                />
+                                <input
+                                    type="text"
+                                    name="bedLocation"
+                                    value={selectedCrop.bedLocation}
+                                    onChange={handleUpdateChange}
+                                    className="w-full px-4 py-2 rounded-md bg-[#333] text-gray-300 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    placeholder="Bed Location"
+                                    required
+                                />
+                                <input
+                                    type="date"
+                                    name="plantedDate"
+                                    value={selectedCrop.plantedDate}
+                                    onChange={handleUpdateChange}
+                                    className="w-full px-4 py-2 rounded-md bg-[#333] text-gray-300 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    required
+                                />
+                                <input
+                                    type="date"
+                                    name="estimatedHarvestDate"
+                                    value={selectedCrop.estimatedHarvestDate}
+                                    onChange={handleUpdateChange}
+                                    className="w-full px-4 py-2 rounded-md bg-[#333] text-gray-300 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    required
+                                />
+                                <select
+                                    name="pesticideState"
+                                    value={selectedCrop.pesticideState}
+                                    onChange={handleUpdateChange}
+                                    className="w-full px-4 py-2 rounded-md bg-[#333] text-gray-300 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                >
+                                    <option value="Not Sprayed">Not Sprayed</option>
+                                    <option value="Sprayed">Sprayed</option>
+                                </select>
+                            </div>
+                            <div className="mt-4 flex justify-between">
+                                <button type="submit" className="bg-[#4CAF50] hover:bg-[#388E3C] text-white px-4 py-2 rounded-lg transition duration-300">
+                                    Save Changes
+                                </button>
+                                <button
+                                    onClick={() => setUpdateModalOpen(false)}
+                                    className="bg-[#F44336] hover:bg-[#D32F2F] text-white px-4 py-2 rounded-lg transition duration-300"
+                                >
+                                    Close
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </motion.div>
             )}
+            
+
+            <ToastContainer />
             <Footer />
         </>
     );

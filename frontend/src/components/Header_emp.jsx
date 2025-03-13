@@ -44,7 +44,7 @@ function Header() {
 
             {/* Navigation */}
             <nav className="space-x-6 hidden sm:flex">
-                <Link to="/dash" className={`px-4 py-2 ${isActive("/dash")}`}>
+                <Link to="/empportcrop" className={`px-4 py-2 ${isActive("/empportcrop")}`}>
                     Dashboard
                 </Link>
                 <Link to="/emp" className={`px-4 py-2 ${isActive("/emp")}`}>
